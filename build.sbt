@@ -7,9 +7,9 @@ name := """play-rfc6902"""
 
 organization := "de.lenabrueder"
 
-licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
+version := "0.1-SNAPSHOT"
 
-//javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
 
 scalaVersion := "2.11.7"
 
