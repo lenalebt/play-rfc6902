@@ -1,19 +1,27 @@
 package de.lenabrueder.rfc6902
 
-import de.lenabrueder.rfc6902.patchset.JsPatchOperation
+import de.lenabrueder.rfc6902.patchset.{ FilterMismatch, PatchConstructionError, PatchApplicationError, JsPatchOperation }
 import play.api.libs.json._
 
 import scala.util.{ Failure, Success, Try }
 
 case class JsPatch(patchSet: Seq[JsPatchOperation]) {
-  def apply(jsValue: JsValue,filter: JsPatchOperation => Boolean={_:JsPatchOperation=>true}): Try[JsValue] = {
-    patchSet.foldLeft(Try(jsValue)) { (jsResult, op) =>
-      jsResult flatMap {
-        if (filter(op))
-          op(_)
-        else
-          Try(_)
-      }
+  def apply(jsValue: JsValue, filter: JsPatchOperation => Boolean = { _: JsPatchOperation => true }): Either[(JsValue, Seq[PatchApplicationError]), JsValue] = {
+    val initValue: (JsValue, Seq[PatchApplicationError]) = (jsValue, Seq.empty)
+    val (result, errors) = patchSet.foldLeft(initValue) { (resultAndErrors, op) =>
+      val (updatedJs, updatedErrors) = resultAndErrors
+      if (filter(op)) {
+        op(updatedJs) match {
+          case Right(newJsResult) => (newJsResult, updatedErrors)
+          case Left(newErrors)    => (updatedJs, updatedErrors :+ newErrors)
+        }
+      } else
+        (updatedJs, updatedErrors :+ FilterMismatch(op))
+    }
+
+    errors match {
+      case Nil => Right(result)
+      case _   => Left(result, errors)
     }
   }
 }
@@ -24,10 +32,22 @@ object JsPatch {
    * @param patchSet May be either an array of patches or a single patch
    * @return a JsPatch that can be applied to any given JsValue to patch it.
    */
-  def apply(patchSet: JsValue): JsPatch = {
+  def apply(patchSet: JsValue): Either[(JsPatch, Seq[PatchConstructionError]), JsPatch] = {
     patchSet match {
-      case patchArray: JsArray => JsPatch(patchArray.as[Seq[JsValue]].map(JsPatchOperation(_)))
-      case singlePatch         => JsPatch(Seq(JsPatchOperation(singlePatch)))
+      case patchArray: JsArray =>
+        val ops = for (jsOp <- patchArray.as[Seq[JsValue]]) yield { JsPatchOperation(jsOp) }
+        val patch = JsPatch(ops.collect { case Right(op) => op })
+        ops.collect { case Left(error) => error } match {
+          case Nil    => Right(patch)
+          case errors => Left((patch, errors))
+        }
+
+      case singlePatch =>
+        JsPatchOperation(singlePatch) match {
+          case Right(op)   => Right(JsPatch(Seq(op)))
+          case Left(error) => Left((JsPatch(Seq.empty), Seq(error)))
+        }
+
     }
   }
 }

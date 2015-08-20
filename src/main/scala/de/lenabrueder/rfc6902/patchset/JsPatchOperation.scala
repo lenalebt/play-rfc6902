@@ -3,7 +3,7 @@ package de.lenabrueder.rfc6902.patchset
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{ Failure, Right }
 
 /**
  * Here, all operation mapping takes place. This is where access rights need to be checked in case they are relevant.
@@ -15,25 +15,27 @@ object PathSplitOperation {
 }
 import PathSplitOperation.toJsPath
 
-abstract class JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue]
+sealed abstract class JsPatchOperation {
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue]
 }
 object JsPatchOperation {
-  def apply(jsOperation: JsValue): JsPatchOperation = {
+  def apply(jsOperation: JsValue): Either[PatchConstructionError, JsPatchOperation] = {
     jsOperation \ "op" match {
-      case JsDefined(JsString(operation)) => Try(operation match {
-        case "test"    => jsOperation.as[JsPatchTestOp]
-        case "remove"  => jsOperation.as[JsPatchRemoveOp]
-        case "add"     => jsOperation.as[JsPatchAddOp]
-        case "replace" => jsOperation.as[JsPatchReplaceOp]
-        case "move"    => jsOperation.as[JsPatchMoveOp]
-        case "copy"    => jsOperation.as[JsPatchCopyOp]
+      case JsDefined(JsString(operation)) => (operation match {
+        case "test"    => Right(jsOperation.validate[JsPatchTestOp])
+        case "remove"  => Right(jsOperation.validate[JsPatchRemoveOp])
+        case "add"     => Right(jsOperation.validate[JsPatchAddOp])
+        case "replace" => Right(jsOperation.validate[JsPatchReplaceOp])
+        case "move"    => Right(jsOperation.validate[JsPatchMoveOp])
+        case "copy"    => Right(jsOperation.validate[JsPatchCopyOp])
+        case _         => Left(IllegalOperation(jsOperation))
       }) match {
-        case Success(op)                        => op
-        case Failure(JsResultException(errors)) => throw new IllegalArgumentException(s"cannot construct patch operation for entry $jsOperation: ${errors.toString()}")
-        case Failure(ex)                        => throw new IllegalArgumentException(s"cannot construct patch operation for entry $jsOperation: $ex")
+        case Right(JsSuccess(op, _)) => Right(op)
+        case Right(JsError(errors))  => Left(IllegalParameters(jsOperation))
+        case Left(error)             => Left(error)
       }
-      case _: JsUndefined => throw new IllegalArgumentException(s"No operation defined for entry $jsOperation in patch set")
+      case JsDefined(_)   => Left(IllegalPatch(jsOperation))
+      case _: JsUndefined => Left(IllegalPatch(jsOperation))
     }
   }
 }
@@ -46,16 +48,18 @@ object JsPatchOperation {
 case class JsPatchTestOp(path: String,
                          value: JsValue)
     extends JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue] =
-    jsValue.transform(toJsPath(path).json.pick) match {
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPath = toJsPath(path)
+    jsValue.transform(jsPath.json.pick) match {
       case JsSuccess(pickedValue, _) => {
         if (pickedValue == value)
-          Success(jsValue)
+          Right(jsValue)
         else
-          Failure(new IllegalStateException(s"given value $pickedValue was not equal to $value"))
+          Left(TestFailedValuesUnequal(pickedValue, testValue = value, jsPath))
       }
-      case _: JsError => Failure(new IllegalStateException(s"value at path $path could not be found"))
+      case _: JsError => Left(TestFailedPathNotFound(jsPath))
     }
+  }
 }
 object JsPatchTestOp {
   implicit val jsPatchTestOpFormat: Format[JsPatchTestOp] = (
@@ -70,8 +74,15 @@ object JsPatchTestOp {
  */
 case class JsPatchRemoveOp(path: String)
     extends JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue] = {
-    jsValue.transform(toJsPath(path).json.prune)
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPath: JsPath = toJsPath(path)
+    jsValue.transform(jsPath.json.pick) match {
+      case JsSuccess(pickedValue, _) => jsValue.transform(jsPath.json.prune) match {
+        case JsSuccess(transformedJs, _) => Right(transformedJs)
+        case _: JsError                  => Left(RemoveFailed(jsPath))
+      }
+      case _: JsError => Left(RemoveFailedPathNotFound(jsPath))
+    }
   }
 }
 object JsPatchRemoveOp {
@@ -90,8 +101,12 @@ object JsPatchRemoveOp {
 case class JsPatchAddOp(path: String,
                         value: JsValue)
     extends JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue] = {
-    jsValue.transform(toJsPath(path).json.put(value)) //TODO: this is wrong and does a replacement and does not correctly handle arrays.
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPath: JsPath = toJsPath(path)
+    jsValue.transform(jsPath.json.put(value)) match { //TODO: this is wrong and does a replacement and does not correctly handle arrays.
+      case JsSuccess(transformedJs, _) => Right(transformedJs)
+      case _: JsError                  => Left(AddFailed(value, jsPath))
+    }
   }
 }
 object JsPatchAddOp {
@@ -110,8 +125,13 @@ object JsPatchAddOp {
 case class JsPatchReplaceOp(path: String,
                             value: JsValue)
     extends JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue] =
-    jsValue.transform(toJsPath(path).json.put(value))
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPath: JsPath = toJsPath(path)
+    jsValue.transform(jsPath.json.put(value)) match {
+      case JsSuccess(transformedJs, _) => Right(transformedJs)
+      case _: JsError                  => Left(ReplaceFailed(value, jsPath))
+    }
+  }
 }
 object JsPatchReplaceOp {
   implicit val jsPatchReplaceOpFormat: Format[JsPatchReplaceOp] = (
@@ -130,10 +150,19 @@ case class JsPatchMoveOp(pathFrom: String,
                          pathTo: String,
                          value: JsValue)
     extends JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue] =
-    jsResult2Try(jsValue.transform(toJsPath(pathTo).json.copyFrom(toJsPath(pathFrom).json.pick))).flatMap(
-      JsPatchRemoveOp(pathFrom)(_)
-    )
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPathTo: JsPath = toJsPath(pathTo)
+    val jsPathFrom: JsPath = toJsPath(pathFrom)
+    JsPatchCopyOp(pathFrom, pathTo, value)(jsValue) match {
+      case Right(copiedJs) => JsPatchRemoveOp(pathFrom)(copiedJs)
+      case Left(error)     => Left(error)
+    }
+
+    //jsValue.transform(jsPathTo.json.copyFrom(jsPathFrom.json.pick)) match{
+    //  case JsSuccess(copiedJs,_) =>JsPatchRemoveOp(pathFrom)(copiedJs)
+    //  case _:JsError => Left(MoveFailed(value, jsPathTo,jsPathFrom))
+    //}
+  }
   //TODO: check if this works correctly
 }
 object JsPatchMoveOp {
@@ -154,8 +183,14 @@ case class JsPatchCopyOp(pathFrom: String,
                          pathTo: String,
                          value: JsValue)
     extends JsPatchOperation {
-  def apply(jsValue: JsValue): Try[JsValue] =
-    jsValue.transform(toJsPath(pathTo).json.copyFrom(toJsPath(pathFrom).json.pick))
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPathTo: JsPath = toJsPath(pathTo)
+    val jsPathFrom: JsPath = toJsPath(pathFrom)
+    jsValue.transform(jsPathTo.json.copyFrom(jsPathFrom.json.pick)) match {
+      case JsSuccess(copiedJs, _) => Right(copiedJs)
+      case _: JsError             => Left(CopyFailed(value, jsPathTo, jsPathFrom))
+    }
+  }
 }
 object JsPatchCopyOp {
   implicit val jsPatchCopyOpFormat: Format[JsPatchCopyOp] = (
