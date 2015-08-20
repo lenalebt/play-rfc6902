@@ -16,8 +16,8 @@ scalaVersion := "2.11.7"
 crossScalaVersions := Seq("2.10.4", "2.11.7")
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
-  "com.typesafe.play" %% "play-json" % "2.4.1"
+  "com.typesafe.play" %% "play-json" % "2.4.1",
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 )
 
 bintraySettings

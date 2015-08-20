@@ -6,10 +6,13 @@ import play.api.libs.json._
 import scala.util.{ Failure, Success, Try }
 
 case class JsPatch(patchSet: Seq[JsPatchOperation]) {
-  def apply(jsValue: JsValue): Try[JsValue] = {
+  def apply(jsValue: JsValue,filter: JsPatchOperation => Boolean={_:JsPatchOperation=>true}): Try[JsValue] = {
     patchSet.foldLeft(Try(jsValue)) { (jsResult, op) =>
       jsResult flatMap {
-        op(_)
+        if (filter(op))
+          op(_)
+        else
+          Try(_)
       }
     }
   }

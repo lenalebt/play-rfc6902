@@ -1,5 +1,6 @@
 package de.lenabrueder.rfc6902
 
+import de.lenabrueder.rfc6902.patchset.JsPatchRemoveOp
 import org.scalatest.{ FlatSpec, Matchers, MustMatchers, WordSpec }
 import play.api.libs.json._
 
@@ -35,6 +36,14 @@ class JsonPatchSpec extends WordSpec with Matchers {
     "support single patches" in {
       val patch = JsPatch(Json.parse("""{"op":"remove", "path":"/b"}"""))
       patch(json) should equal(Success(Json.parse("""{"a":"b"}""")))
+    }
+
+    "support filters" in {
+      val patch = JsPatch(Json.parse("""[{"op":"remove", "path":"/b"},{"op":"remove", "path":"/a"}]"""))
+      patch(json,{
+        case JsPatchRemoveOp(path)=>path.startsWith("/a").unary_!
+        case _ => true
+      }) should equal(Success(Json.parse("""{"a":"b"}""")))
     }
   }
 }
