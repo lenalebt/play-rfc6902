@@ -28,6 +28,12 @@ class JsonPatchSpec extends WordSpec with Matchers {
       patch.right.get(json) should equal(Right(json))
     }
 
+    "support the \"replace\" functionality" in {
+      val patch = JsPatch(Json.parse("""[{"op":"replace", "path":"/a", "value":"g"}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"g", "b":{"c":"d"}}""")))
+    }
+
     "fail when no \"value\" is given for operation \"replace\" in the patch" in {
       val patch = JsPatch(Json.parse("""[{"op":"replace", "path":"/b"}]"""))
       patch shouldBe 'left
