@@ -11,13 +11,16 @@ import scala.util.{ Failure, Right }
 
 object PathSplitOperation {
   def splitPath(path: String) = path.split("/").filterNot(_.isEmpty)
+
   def toJsPath(path: String) = splitPath(path).foldLeft(JsPath())(_ \ _)
 }
+
 import PathSplitOperation.toJsPath
 
 sealed abstract class JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue]
 }
+
 object JsPatchOperation {
   def apply(jsOperation: JsValue): Either[PatchConstructionError, JsPatchOperation] = {
     jsOperation \ "op" match {
@@ -61,6 +64,7 @@ case class JsPatchTestOp(path: String,
     }
   }
 }
+
 object JsPatchTestOp {
   implicit val jsPatchTestOpFormat: Format[JsPatchTestOp] = (
     (JsPath \ "path").format[String] and
@@ -85,6 +89,7 @@ case class JsPatchRemoveOp(path: String)
     }
   }
 }
+
 object JsPatchRemoveOp {
   implicit val jsPatchRemoveOpFormat: Format[JsPatchRemoveOp] =
     (JsPath \ "path").format[String].inmap( //special case for single-element objects!
@@ -103,12 +108,14 @@ case class JsPatchAddOp(path: String,
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
-    jsValue.transform(jsPath.json.put(value)) match { //TODO: this is wrong and does a replacement and does not correctly handle arrays.
-      case JsSuccess(transformedJs, _) => Right(transformedJs)
+    jsValue.transform(jsPath.json.put(value)) match {
+      //TODO: this is wrong and does a replacement and does not correctly handle arrays.
+      case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
       case _: JsError                  => Left(AddFailed(value, jsPath))
     }
   }
 }
+
 object JsPatchAddOp {
   implicit val jsPatchAddOpFormat: Format[JsPatchAddOp] = (
     (JsPath \ "path").format[String] and
@@ -128,11 +135,12 @@ case class JsPatchReplaceOp(path: String,
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
     jsValue.transform(jsPath.json.put(value)) match {
-      case JsSuccess(transformedJs, _) => Right(transformedJs)
+      case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
       case _: JsError                  => Left(ReplaceFailed(value, jsPath))
     }
   }
 }
+
 object JsPatchReplaceOp {
   implicit val jsPatchReplaceOpFormat: Format[JsPatchReplaceOp] = (
     (JsPath \ "path").format[String] and
@@ -163,8 +171,10 @@ case class JsPatchMoveOp(pathFrom: String,
     //  case _:JsError => Left(MoveFailed(value, jsPathTo,jsPathFrom))
     //}
   }
+
   //TODO: check if this works correctly
 }
+
 object JsPatchMoveOp {
   implicit val jsPatchMoveOpFormat: Format[JsPatchMoveOp] = (
     (JsPath \ "from").format[String] and
@@ -192,6 +202,7 @@ case class JsPatchCopyOp(pathFrom: String,
     }
   }
 }
+
 object JsPatchCopyOp {
   implicit val jsPatchCopyOpFormat: Format[JsPatchCopyOp] = (
     (JsPath \ "from").format[String] and
