@@ -157,18 +157,17 @@ object JsPatchReplaceOp {
  * operation "move"
  * @param pathFrom
  * @param pathTo
- * @param value
  */
 case class JsPatchMoveOp(pathFrom: String,
-                         pathTo: String,
-                         value: JsValue)
+                         pathTo: String)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPathTo: JsPath = toJsPath(pathTo)
     val jsPathFrom: JsPath = toJsPath(pathFrom)
-    JsPatchCopyOp(pathFrom, pathTo, value)(jsValue) match {
-      case Right(copiedJs) => JsPatchRemoveOp(pathFrom)(copiedJs)
-      case Left(error)     => Left(error)
+    JsPatchCopyOp(pathFrom, pathTo)(jsValue) match {
+      case Right(copiedJs)                    => JsPatchRemoveOp(pathFrom)(copiedJs)
+      case Left(CopyFailed(pathFrom, pathTo)) => Left(MoveFailed(pathFrom, pathTo))
+      case Left(errors)                       => Left(errors)
     }
 
     //jsValue.transform(jsPathTo.json.copyFrom(jsPathFrom.json.pick)) match{
@@ -183,8 +182,7 @@ case class JsPatchMoveOp(pathFrom: String,
 object JsPatchMoveOp {
   implicit val jsPatchMoveOpFormat: Format[JsPatchMoveOp] = (
     (JsPath \ "from").format[String] and
-    (JsPath \ "path").format[String] and
-    (JsPath \ "value").format[JsValue]
+    (JsPath \ "path").format[String]
   )(JsPatchMoveOp.apply, unlift(JsPatchMoveOp.unapply))
 }
 
@@ -192,18 +190,16 @@ object JsPatchMoveOp {
  * operation "copy"
  * @param pathFrom
  * @param pathTo
- * @param value
  */
 case class JsPatchCopyOp(pathFrom: String,
-                         pathTo: String,
-                         value: JsValue)
+                         pathTo: String)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
-    val jsPathTo: JsPath = toJsPath(pathTo)
     val jsPathFrom: JsPath = toJsPath(pathFrom)
+    val jsPathTo: JsPath = toJsPath(pathTo)
     jsValue.transform(jsPathTo.json.copyFrom(jsPathFrom.json.pick)) match {
       case JsSuccess(copiedJs, _) => Right(copiedJs)
-      case _: JsError             => Left(CopyFailed(value, jsPathTo, jsPathFrom))
+      case _: JsError             => Left(CopyFailed(jsPathFrom, jsPathTo))
     }
   }
 }
@@ -211,7 +207,6 @@ case class JsPatchCopyOp(pathFrom: String,
 object JsPatchCopyOp {
   implicit val jsPatchCopyOpFormat: Format[JsPatchCopyOp] = (
     (JsPath \ "from").format[String] and
-    (JsPath \ "path").format[String] and
-    (JsPath \ "value").format[JsValue]
+    (JsPath \ "path").format[String]
   )(JsPatchCopyOp.apply, unlift(JsPatchCopyOp.unapply))
 }

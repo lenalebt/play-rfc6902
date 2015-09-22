@@ -66,7 +66,7 @@ class JsonPatchSpec extends WordSpec with Matchers {
     "support adding array elements" in pending
     "support adding an array element at the beginning" in pending
     "support adding an array element somewhere in the middle" in pending
-    "support adding an array element at ther end" in pending
+    "support adding an array element at their end" in pending
     "support adding numbers" in {
       val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/e", "value":271}]"""))
       patch shouldBe 'right
@@ -77,7 +77,11 @@ class JsonPatchSpec extends WordSpec with Matchers {
       patch shouldBe 'right
       patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "f":"pink fluffy unicorns dancing on rainbows"}""")))
     }
-    "support adding nulls" in pending
+    "support adding nulls" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/g", "value":null}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "g":null}""")))
+    }
     "support adding bools" in {
       val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/g", "value":false}]"""))
       patch shouldBe 'right
@@ -145,12 +149,20 @@ class JsonPatchSpec extends WordSpec with Matchers {
     """behave exactly as "first remove, then add" """ in pending
   }
   "JsPatch.move" should {
-    "not be successful if the source location does not exist" in pending
+    "not be successful if the source location does not exist" in {
+      val patch = JsPatch(Json.parse("""[{"op":"move", "from":"/d", "path":"/g"}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Left((json, Seq(MoveFailed(JsPath \ "d", JsPath \ "g")))))
+    }
     """behave exactly as "first remove on source, then add at target location" """ in pending
     "fail if the target location is below the source location" in pending
   }
   "JsPatch.copy" should {
-    "fail if the source location does not exist" in pending
+    "fail if the source location does not exist" in {
+      val patch = JsPatch(Json.parse("""[{"op":"copy", "from":"/d", "path":"/g"}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Left((json, Seq(CopyFailed(JsPath \ "d", JsPath \ "g")))))
+    }
     """behave exactly like "add the value located at source at the target" """ in pending
   }
   "JsPatch.test" should {

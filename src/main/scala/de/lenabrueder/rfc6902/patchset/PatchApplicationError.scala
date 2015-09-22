@@ -20,10 +20,10 @@ case class ReplaceFailedPathDidNotExist(path: JsPath) extends ReplaceFailedError
 case class ReplaceFailed(value: JsValue, path: JsPath) extends ReplaceFailedError
 
 trait MoveFailedError extends PatchApplicationError
-case class MoveFailed(value: JsValue, pathTo: JsPath, pathFrom: JsPath) extends MoveFailedError
+case class MoveFailed(pathFrom: JsPath, pathTo: JsPath) extends MoveFailedError
 
 trait CopyFailedError extends PatchApplicationError
-case class CopyFailed(value: JsValue, pathTo: JsPath, pathFrom: JsPath) extends CopyFailedError
+case class CopyFailed(pathFrom: JsPath, pathTo: JsPath) extends CopyFailedError
 
 trait FilterMismatchError extends PatchApplicationError
 case class FilterMismatch(jsPatchOperation: JsPatchOperation) extends FilterMismatchError
