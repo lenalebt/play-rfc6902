@@ -134,10 +134,15 @@ case class JsPatchReplaceOp(path: String,
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
-    jsValue.transform(jsPath.json.put(value)) match {
-      case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
-      case _: JsError                  => Left(ReplaceFailed(value, jsPath))
+    jsValue.transform(jsPath.json.pick) match {
+      case JsSuccess(pickedValue, _) =>
+        jsValue.transform(jsPath.json.put(value)) match {
+          case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
+          case _: JsError                  => Left(ReplaceFailed(value, jsPath))
+        }
+      case _: JsError => Left(ReplaceFailedPathDidNotExist(jsPath))
     }
+
   }
 }
 

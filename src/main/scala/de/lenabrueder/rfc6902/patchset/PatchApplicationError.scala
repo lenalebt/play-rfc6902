@@ -16,6 +16,7 @@ trait AddFailedError extends PatchApplicationError
 case class AddFailed(value: JsValue, path: JsPath) extends AddFailedError
 
 trait ReplaceFailedError extends PatchApplicationError
+case class ReplaceFailedPathDidNotExist(path: JsPath) extends ReplaceFailedError
 case class ReplaceFailed(value: JsValue, path: JsPath) extends ReplaceFailedError
 
 trait MoveFailedError extends PatchApplicationError
