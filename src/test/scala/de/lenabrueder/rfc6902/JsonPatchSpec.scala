@@ -67,31 +67,58 @@ class JsonPatchSpec extends WordSpec with Matchers {
     "support adding an array element at the beginning" in pending
     "support adding an array element somewhere in the middle" in pending
     "support adding an array element at ther end" in pending
-    "support adding numbers" in pending
-    "support adding strings" in pending
+    "support adding numbers" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/e", "value":271}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "e":271}""")))
+    }
+    "support adding strings" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/f", "value":"pink fluffy unicorns dancing on rainbows"}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "f":"pink fluffy unicorns dancing on rainbows"}""")))
+    }
     "support adding nulls" in pending
-    "support adding bools" in pending
-    "replace values that are already there" in pending
-    "add values that are not already there" in pending
-    "add to objects that are not already existing" in pending
+    "support adding bools" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/g", "value":false}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "g":false}""")))
+    }
+    "replace values that are already there" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/a", "value":false}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":false, "b":{"c":"d"}, "c":1}""")))
+    }
+    "add values that are not already there" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/k", "value":false}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "k":false}""")))
+    }
+
+    //from the docs for the next two test cases:
+    /*
+     * However, the object itself or an array containing it does need to
+     * exist, and it remains an error for that not to be the case.  For
+     * example, an "add" with a target location of "/a/b" starting with this
+     * document:
+     *
+     * { "a": { "foo": 1 } }
+     *
+     * is not an error, because "a" exists, and "b" will be added to its
+     * value.  It is an error in this document:
+     *
+     * { "q": { "bar": 2 } }
+     *
+     * because "a" does not exist.
+    */
+    "add to objects that are not already existing" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/b/d", "value":false}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d", "d":false}, "c":1}""")))
+    }
     "not add if the paths parent does not already exist" in {
-      //from the docs:
-      /*
-      However, the object itself or an array containing it does need to
-   exist, and it remains an error for that not to be the case.  For
-   example, an "add" with a target location of "/a/b" starting with this
-   document:
-
-   { "a": { "foo": 1 } }
-
-   is not an error, because "a" exists, and "b" will be added to its
-   value.  It is an error in this document:
-
-   { "q": { "bar": 2 } }
-
-   because "a" does not exist.
-      */
-      pending
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/d/e", "value":false}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Left(json, Seq( /*TODO*/ )))
     }
   }
   "JsPatch.remove" should {
