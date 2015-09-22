@@ -7,7 +7,7 @@ name := """play-rfc6902"""
 
 organization := "de.lenabrueder"
 
-version := "0.1-SNAPSHOT"
+version := "0.1"
 
 licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
 
@@ -20,15 +20,8 @@ publishTo := {
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 publishArtifact in Test := false
-pomIncludeRepository := { _ => false }
 pomExtra := (
   <url>https://github.com/lenalebt/play-rfc6902</url>
-  <licenses>
-    <license>
-      <name>LGPL</name>
-      <url>https://opensource.org/licenses/LGPL-3.0</url>
-    </license>
-  </licenses>
   <scm>
     <url>git@github.com:lenalebt/play-rfc6902.git</url>
     <developerConnection>scm:git:git@github.com:lenalebt/play-rfc6902.git</developerConnection>
