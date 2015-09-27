@@ -7,11 +7,12 @@ name := """play-rfc6902"""
 
 organization := "de.lenabrueder"
 
-version := "0.1"
+version := "0.1-SNAPSHOT"
 
 licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
 
 publishMavenStyle := true
+
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
@@ -19,7 +20,9 @@ publishTo := {
   else
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
+
 publishArtifact in Test := false
+
 pomExtra := (
   <url>https://github.com/lenalebt/play-rfc6902</url>
   <scm>
@@ -34,20 +37,17 @@ pomExtra := (
       <url>https://github.com/lenalebt</url>
     </developer>
   </developers>)
+
 homepage := Some(url("https://github.com/lenalebt/play-rfc6902"))
 
 scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.10.4", "2.11.7")
+crossScalaVersions := Seq("2.11.7")
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.4.3",
   "org.scalatest" %% "scalatest" % "2.2.1" % "test"
 )
-
-bintraySettings
-
-com.typesafe.sbt.SbtGit.versionWithGit
 
 scalariformSettings
 
