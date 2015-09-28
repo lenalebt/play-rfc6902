@@ -7,7 +7,7 @@ name := """play-rfc6902"""
 
 organization := "de.lenabrueder"
 
-version := "0.1-SNAPSHOT"
+version := "0.1"
 
 licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
 
