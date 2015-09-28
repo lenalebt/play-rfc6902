@@ -7,7 +7,7 @@ name := """play-rfc6902"""
 
 organization := "de.lenabrueder"
 
-version := "0.2-SNAPSHOT"
+version := "0.1"
 
 licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
 
@@ -24,7 +24,6 @@ publishTo := {
 publishArtifact in Test := false
 
 pomExtra := (
-  <url>https://github.com/lenalebt/play-rfc6902</url>
   <scm>
     <url>git@github.com:lenalebt/play-rfc6902.git</url>
     <developerConnection>scm:git:git@github.com:lenalebt/play-rfc6902.git</developerConnection>
