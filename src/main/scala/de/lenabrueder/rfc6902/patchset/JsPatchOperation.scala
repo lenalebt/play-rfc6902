@@ -10,9 +10,9 @@ import scala.util.{ Failure, Right }
  */
 
 object PathSplitOperation {
-  def splitPath(path: String) = path.split("/").filterNot(_.isEmpty)
+  def splitPath(path: String): Array[String] = path.split("/").filterNot(_.isEmpty)
 
-  def toJsPath(path: String) = splitPath(path).foldLeft(JsPath())(_ \ _)
+  def toJsPath(path: String): JsPath = splitPath(path).foldLeft(JsPath())(_ \ _)
 }
 
 import PathSplitOperation.toJsPath
@@ -41,6 +41,17 @@ object JsPatchOperation {
       case _: JsUndefined => Left(IllegalPatch(jsOperation))
     }
   }
+
+  implicit val jsPatchOpWrites: Writes[JsPatchOperation] = new Writes[JsPatchOperation] {
+    override def writes(o: JsPatchOperation): JsValue = o match {
+      case o @ JsPatchTestOp(path, value)      => Json.toJson(o)(JsPatchTestOp.jsPatchTestOpWrites)
+      case o @ JsPatchRemoveOp(path)           => Json.toJson(o)(JsPatchRemoveOp.jsPatchRemoveOpWrites)
+      case o @ JsPatchAddOp(path, value)       => Json.toJson(o)(JsPatchAddOp.jsPatchAddOpWrites)
+      case o @ JsPatchReplaceOp(path, value)   => Json.toJson(o)(JsPatchReplaceOp.jsPatchReplaceOpWrites)
+      case o @ JsPatchMoveOp(pathFrom, pathTo) => Json.toJson(o)(JsPatchMoveOp.jsPatchMoveOpWrites)
+      case o @ JsPatchCopyOp(pathFrom, pathTo) => Json.toJson(o)(JsPatchCopyOp.jsPatchCopyOpWrites)
+    }
+  }
 }
 
 /**
@@ -66,10 +77,18 @@ case class JsPatchTestOp(path: String,
 }
 
 object JsPatchTestOp {
-  implicit val jsPatchTestOpFormat: Format[JsPatchTestOp] = (
-    (JsPath \ "path").format[String] and
-    (JsPath \ "value").format[JsValue]
-  )(JsPatchTestOp.apply, unlift(JsPatchTestOp.unapply))
+  implicit val jsPatchTestOpReads: Reads[JsPatchTestOp] = (
+    (JsPath \ "path").read[String] and
+    (JsPath \ "value").read[JsValue]
+  )(JsPatchTestOp.apply _)
+
+  implicit val jsPatchTestOpWrites: Writes[JsPatchTestOp] = new Writes[JsPatchTestOp] {
+    override def writes(o: JsPatchTestOp): JsValue = Json.obj(
+      "op" -> "test",
+      "path" -> o.path,
+      "value" -> o.value
+    )
+  }
 }
 
 /**
@@ -91,11 +110,17 @@ case class JsPatchRemoveOp(path: String)
 }
 
 object JsPatchRemoveOp {
-  implicit val jsPatchRemoveOpFormat: Format[JsPatchRemoveOp] =
-    (JsPath \ "path").format[String].inmap( //special case for single-element objects!
-      JsPatchRemoveOp(_),
-      (op: JsPatchRemoveOp) => op.path
+  implicit val jsPatchRemoveOpReads: Reads[JsPatchRemoveOp] = new Reads[JsPatchRemoveOp] {
+    override def reads(json: JsValue): JsResult[JsPatchRemoveOp] =
+      (json \ "path").validate[String].map(JsPatchRemoveOp(_))
+  }
+
+  implicit val jsPatchRemoveOpWrites: Writes[JsPatchRemoveOp] = new Writes[JsPatchRemoveOp] {
+    override def writes(o: JsPatchRemoveOp): JsValue = Json.obj(
+      "op" -> "remove",
+      "path" -> o.path
     )
+  }
 }
 
 /**
@@ -117,10 +142,18 @@ case class JsPatchAddOp(path: String,
 }
 
 object JsPatchAddOp {
-  implicit val jsPatchAddOpFormat: Format[JsPatchAddOp] = (
-    (JsPath \ "path").format[String] and
-    (JsPath \ "value").format[JsValue]
-  )(JsPatchAddOp.apply, unlift(JsPatchAddOp.unapply))
+  implicit val jsPatchAddOpReads: Reads[JsPatchAddOp] = (
+    (JsPath \ "path").read[String] and
+    (JsPath \ "value").read[JsValue]
+  )(JsPatchAddOp.apply _)
+
+  implicit val jsPatchAddOpWrites: Writes[JsPatchAddOp] = new Writes[JsPatchAddOp] {
+    override def writes(o: JsPatchAddOp): JsValue = Json.obj(
+      "op" -> "add",
+      "path" -> o.path,
+      "value" -> o.value
+    )
+  }
 }
 
 /**
@@ -147,10 +180,18 @@ case class JsPatchReplaceOp(path: String,
 }
 
 object JsPatchReplaceOp {
-  implicit val jsPatchReplaceOpFormat: Format[JsPatchReplaceOp] = (
-    (JsPath \ "path").format[String] and
-    (JsPath \ "value").format[JsValue]
-  )(JsPatchReplaceOp.apply, unlift(JsPatchReplaceOp.unapply))
+  implicit val jsPatchReplaceOpReads: Reads[JsPatchReplaceOp] = (
+    (JsPath \ "path").read[String] and
+    (JsPath \ "value").read[JsValue]
+  )(JsPatchReplaceOp.apply _)
+
+  implicit val jsPatchReplaceOpWrites: Writes[JsPatchReplaceOp] = new Writes[JsPatchReplaceOp] {
+    override def writes(o: JsPatchReplaceOp): JsValue = Json.obj(
+      "op" -> "replace",
+      "path" -> o.path,
+      "value" -> o.value
+    )
+  }
 }
 
 /**
@@ -180,10 +221,18 @@ case class JsPatchMoveOp(pathFrom: String,
 }
 
 object JsPatchMoveOp {
-  implicit val jsPatchMoveOpFormat: Format[JsPatchMoveOp] = (
-    (JsPath \ "from").format[String] and
-    (JsPath \ "path").format[String]
-  )(JsPatchMoveOp.apply, unlift(JsPatchMoveOp.unapply))
+  implicit val jsPatchMoveOpReads: Reads[JsPatchMoveOp] = (
+    (JsPath \ "from").read[String] and
+    (JsPath \ "path").read[String]
+  )(JsPatchMoveOp.apply _)
+
+  implicit val jsPatchMoveOpWrites: Writes[JsPatchMoveOp] = new Writes[JsPatchMoveOp] {
+    override def writes(o: JsPatchMoveOp): JsValue = Json.obj(
+      "op" -> "move",
+      "from" -> o.pathFrom,
+      "path" -> o.pathTo
+    )
+  }
 }
 
 /**
@@ -205,8 +254,16 @@ case class JsPatchCopyOp(pathFrom: String,
 }
 
 object JsPatchCopyOp {
-  implicit val jsPatchCopyOpFormat: Format[JsPatchCopyOp] = (
-    (JsPath \ "from").format[String] and
-    (JsPath \ "path").format[String]
-  )(JsPatchCopyOp.apply, unlift(JsPatchCopyOp.unapply))
+  implicit val jsPatchCopyOpReads: Reads[JsPatchCopyOp] = (
+    (JsPath \ "from").read[String] and
+    (JsPath \ "path").read[String]
+  )(JsPatchCopyOp.apply _)
+
+  implicit val jsPatchCopyOpWrites: Writes[JsPatchCopyOp] = new Writes[JsPatchCopyOp] {
+    override def writes(o: JsPatchCopyOp): JsValue = Json.obj(
+      "op" -> "copy",
+      "from" -> o.pathFrom,
+      "path" -> o.pathTo
+    )
+  }
 }

@@ -256,4 +256,14 @@ class JsonPatchSpec extends WordSpec with Matchers {
     }
     "tests json literals true, false, null for equality correctly" in pending
   }
+
+  "A Seq[JsPatchOp]" should {
+    "be convertible to JSON" in {
+      val jsPatch: JsValue =
+        Json.parse("""[{"op":"add", "path":"/b/d", "value":false},{"op":"test", "path":"/a", "value":1}]""")
+      val patch = JsPatch(jsPatch)
+      patch shouldBe 'right
+      Json.toJson(patch.right.get.patchSet) shouldBe jsPatch
+    }
+  }
 }
