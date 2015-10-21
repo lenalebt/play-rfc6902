@@ -56,8 +56,8 @@ class JsonPatchSpec extends WordSpec with Matchers {
       val patch = JsPatch(Json.parse("""[{"op":"remove", "path":"/b"},{"op":"remove", "path":"/a"}]"""))
       patch shouldBe 'right
       patch.right.get(json, {
-        case JsPatchRemoveOp(path) => path.startsWith("/a").unary_!
-        case _                     => true
+        case JsPatchRemoveOp(path) => (path.startsWith("/a").unary_!, None)
+        case _                     => (true, None)
       }) should equal(Left(Json.parse("""{"a":"b", "c":1}"""), Seq(FilterMismatch(JsPatchRemoveOp("/a")))))
     }
   }

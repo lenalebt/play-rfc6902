@@ -5,18 +5,23 @@ import play.api.libs.json._
 
 import scala.util.{ Failure, Success, Try }
 
+/**
+ * Class holding a JsPatch with its operations.
+ */
 case class JsPatch(patchSet: Seq[JsPatchOperation]) {
-  def apply(jsValue: JsValue, filter: JsPatchOperation => Boolean = { _: JsPatchOperation => true }): Either[(JsValue, Seq[PatchApplicationError]), JsValue] = {
+  def apply[T](jsValue: JsValue,
+               filter: JsPatchOperation => (Boolean, Option[T]) = { _: JsPatchOperation => (true, None) }): Either[(JsValue, Seq[PatchApplicationError]), JsValue] = {
     val initValue: (JsValue, Seq[PatchApplicationError]) = (jsValue, Seq.empty)
     val (result, errors) = patchSet.foldLeft(initValue) { (resultAndErrors, op) =>
       val (updatedJs, updatedErrors) = resultAndErrors
-      if (filter(op)) {
+      val (filterResult, optReason) = filter(op)
+      if (filterResult) {
         op(updatedJs) match {
           case Right(newJsResult) => (newJsResult, updatedErrors)
           case Left(newErrors)    => (updatedJs, updatedErrors :+ newErrors)
         }
       } else
-        (updatedJs, updatedErrors :+ FilterMismatch(op))
+        (updatedJs, updatedErrors :+ FilterMismatch(op, optReason))
     }
 
     errors match {

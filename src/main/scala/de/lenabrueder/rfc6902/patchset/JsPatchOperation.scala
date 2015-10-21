@@ -17,6 +17,9 @@ object PathSplitOperation {
 
 import PathSplitOperation.toJsPath
 
+/**
+ * A json patch operation which can be constructed from its JSON representation.
+ */
 sealed abstract class JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue]
 }

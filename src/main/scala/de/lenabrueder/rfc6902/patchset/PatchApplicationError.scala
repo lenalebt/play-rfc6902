@@ -26,4 +26,4 @@ trait CopyFailedError extends PatchApplicationError
 case class CopyFailed(pathFrom: JsPath, pathTo: JsPath) extends CopyFailedError
 
 trait FilterMismatchError extends PatchApplicationError
-case class FilterMismatch(jsPatchOperation: JsPatchOperation) extends FilterMismatchError
+case class FilterMismatch[T](jsPatchOperation: JsPatchOperation, reason: Option[T] = None) extends FilterMismatchError
