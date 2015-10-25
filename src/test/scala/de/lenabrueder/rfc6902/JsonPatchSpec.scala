@@ -33,6 +33,21 @@ class JsonPatchSpec extends WordSpec with Matchers {
       patch shouldBe 'right
       patch.right.get(json) should equal(Right(Json.parse("""{"a":"g", "b":{"c":"d"}, "c":1}""")))
     }
+    "\"replace\" should only replace the value it points at" in {
+      val patch = JsPatch(Json.parse("""[{"op":"replace", "path":"/a/b", "value":"g"}]"""))
+      patch shouldBe 'right
+      patch.right.get(Json.parse("""{"a":{"b":1,"c":2}}""")) should equal(Right(Json.parse("""{"a":{"b":"g","c":2}}""")))
+    }
+    "support the \"add\" functionality" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/d", "value":"g"}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1, "d":"g"}""")))
+    }
+    "\"add\" should only replace the value it points at" in {
+      val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/a/d", "value":"g"}]"""))
+      patch shouldBe 'right
+      patch.right.get(Json.parse("""{"a":{"b":1,"c":2}}""")) should equal(Right(Json.parse("""{"a":{"b":1,"c":2,"d":"g"}}""")))
+    }
 
     "fail when no \"value\" is given for operation \"replace\" in the patch" in {
       val patch = JsPatch(Json.parse("""[{"op":"replace", "path":"/b"}]"""))

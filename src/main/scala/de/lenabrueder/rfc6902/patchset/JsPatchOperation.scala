@@ -16,6 +16,7 @@ object PathSplitOperation {
 }
 
 import PathSplitOperation.toJsPath
+import PathSplitOperation.splitPath
 
 /**
  * A json patch operation which can be constructed from its JSON representation.
@@ -172,7 +173,7 @@ case class JsPatchReplaceOp(path: String,
     val jsPath: JsPath = toJsPath(path)
     jsValue.transform(jsPath.json.pick) match {
       case JsSuccess(pickedValue, _) =>
-        jsValue.transform(jsPath.json.put(value)) match {
+        jsValue.transform(jsPath.json.update(JsPath.read[JsValue].map { o => value })) match {
           case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
           case _: JsError                  => Left(ReplaceFailed(value, jsPath))
         }
