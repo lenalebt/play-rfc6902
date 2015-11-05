@@ -137,10 +137,13 @@ case class JsPatchAddOp(path: String,
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
-    jsValue.transform(jsPath.json.put(value)) match {
-      //TODO: this is wrong and does a replacement and does not correctly handle arrays.
-      case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
-      case _: JsError                  => Left(AddFailed(value, jsPath))
+    JsPath(jsPath.path.reverse.tail.reverse).asSingleJson(jsValue) match {
+      case JsDefined(_) => jsValue.transform(jsPath.json.put(value)) match {
+        //TODO: this is wrong and does a replacement and does not correctly handle arrays.
+        case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject].deepMerge(transformedJs))
+        case _: JsError                  => Left(AddFailed(value, jsPath))
+      }
+      case _: JsUndefined => Left(AddFailed(value, jsPath))
     }
   }
 }
@@ -174,7 +177,7 @@ case class JsPatchReplaceOp(path: String,
     jsValue.transform(jsPath.json.pick) match {
       case JsSuccess(pickedValue, _) =>
         jsValue.transform(jsPath.json.update(JsPath.read[JsValue].map { o => value })) match {
-          case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject] ++ transformedJs)
+          case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject].deepMerge(transformedJs))
           case _: JsError                  => Left(ReplaceFailed(value, jsPath))
         }
       case _: JsError => Left(ReplaceFailedPathDidNotExist(jsPath))

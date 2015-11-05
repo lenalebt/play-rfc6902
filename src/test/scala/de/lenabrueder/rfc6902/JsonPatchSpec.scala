@@ -137,7 +137,7 @@ class JsonPatchSpec extends WordSpec with Matchers {
     "not add if the paths parent does not already exist" in {
       val patch = JsPatch(Json.parse("""[{"op":"add", "path":"/d/e", "value":false}]"""))
       patch shouldBe 'right
-      patch.right.get(json) should equal(Left(json, Seq( /*TODO*/ )))
+      patch.right.get(json) should equal(Left(json, Seq(AddFailed(JsBoolean(false), JsPath \ "d" \ "e"))))
     }
   }
   "JsPatch.remove" should {

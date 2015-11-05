@@ -14,6 +14,7 @@ case class RemoveFailed(path: JsPath) extends RemoveFailedError
 
 trait AddFailedError extends PatchApplicationError
 case class AddFailed(value: JsValue, path: JsPath) extends AddFailedError
+case class AddFailedPathMissing(value: JsValue, path: JsPath) extends AddFailedError
 
 trait ReplaceFailedError extends PatchApplicationError
 case class ReplaceFailedPathDidNotExist(path: JsPath) extends ReplaceFailedError
