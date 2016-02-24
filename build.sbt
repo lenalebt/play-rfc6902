@@ -44,8 +44,8 @@ scalaVersion := "2.11.7"
 crossScalaVersions := Seq("2.11.7")
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-json" % "2.4.3",
-  "org.scalatest" %% "scalatest" % "2.2.1" % "test"
+  "com.typesafe.play" %% "play-json" % "2.4.6",
+  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 
 scalariformSettings
