@@ -4,7 +4,7 @@ in [Play](https://www.playframework.com/) applications without the need for addi
 
 To use it in your project, simply include it in your `build.sbt`:
 
-    libraryDependencies += "de.lenabrueder" %% "play-rfc6902" % "0.1"
+    libraryDependencies += "de.lenabrueder" %% "play-rfc6902" % "0.6"
 
 # Examples
 
@@ -21,10 +21,9 @@ Will output
 
     patched json: {"a":"b","c":1}
 
-For more examples, have a look at the [test cases](https://github.com/lenalebt/play-rfc6902/blob/master/src/test/scala/de/lenabrueder/rfc6902/JsonPatchSpec.scala).
+For more examples, have a look at the [test cases](https://github.com/lenalebt/play-rfc6902/blob/master/src/test/scala/de/lenabrueder/rfc6902/).
 
-Build with activator/sbt. There are test case failures at the moment for some edge cases, the test cases are already
-written to comply to the RFC6902, even if the code does not work this way currently.
+Build with activator/sbt.
 
 ## Plan for release 1.0
 Release 1.0 will be [RFC6902](https://tools.ietf.org/html/rfc6902) and
