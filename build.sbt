@@ -1,5 +1,4 @@
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-import com.typesafe.sbt.SbtScalariform._
 
 import scalariform.formatter.preferences._
 
@@ -59,3 +58,6 @@ ScalariformKeys.preferences := ScalariformKeys.preferences.value
   .setPreference(IndentPackageBlocks, true)
   .setPreference(IndentSpaces, 2)
   .setPreference(PreserveDanglingCloseParenthesis, true)
+
+scapegoatVersion := "1.2.0"
+compile in Compile <<= (compile in Compile) dependsOn scapegoat

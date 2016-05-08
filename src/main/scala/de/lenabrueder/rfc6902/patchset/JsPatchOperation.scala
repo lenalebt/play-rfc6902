@@ -65,8 +65,10 @@ object JsPatchOperation {
  * @param path
  * @param value
  */
-case class JsPatchTestOp(path: String,
-                         value: JsValue)
+case class JsPatchTestOp(
+  path:  String,
+  value: JsValue
+)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath = toJsPath(path)
@@ -134,8 +136,10 @@ object JsPatchRemoveOp {
  * @param path
  * @param value
  */
-case class JsPatchAddOp(path: String,
-                        value: JsValue)
+case class JsPatchAddOp(
+  path:  String,
+  value: JsValue
+)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
@@ -171,8 +175,10 @@ object JsPatchAddOp {
  * @param value
  */
 
-case class JsPatchReplaceOp(path: String,
-                            value: JsValue)
+case class JsPatchReplaceOp(
+  path:  String,
+  value: JsValue
+)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
@@ -208,8 +214,10 @@ object JsPatchReplaceOp {
  * @param pathFrom
  * @param pathTo
  */
-case class JsPatchMoveOp(pathFrom: String,
-                         pathTo: String)
+case class JsPatchMoveOp(
+  pathFrom: String,
+  pathTo:   String
+)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPathTo: JsPath = toJsPath(pathTo)
@@ -249,8 +257,10 @@ object JsPatchMoveOp {
  * @param pathFrom
  * @param pathTo
  */
-case class JsPatchCopyOp(pathFrom: String,
-                         pathTo: String)
+case class JsPatchCopyOp(
+  pathFrom: String,
+  pathTo:   String
+)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPathFrom: JsPath = toJsPath(pathFrom)
@@ -281,8 +291,10 @@ object JsPatchCopyOp {
  * operation "overlay"
  * @param path
  */
-case class JsPatchOverlayOp(path: String,
-                            value: JsValue)
+case class JsPatchOverlayOp(
+  path:  String,
+  value: JsValue
+)
     extends JsPatchOperation {
   def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
     val jsPath: JsPath = toJsPath(path)
