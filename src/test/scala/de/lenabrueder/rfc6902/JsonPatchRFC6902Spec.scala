@@ -1,12 +1,15 @@
 package de.lenabrueder.rfc6902
 
+import de.lenabrueder.UnitSpec
 import de.lenabrueder.rfc6902.patchset._
-import org.scalatest.{ FlatSpec, Matchers, MustMatchers, WordSpec }
 import play.api.libs.json._
 
-import scala.util.{ Failure, Success }
-
-class JsonPatchSpec extends WordSpec with Matchers {
+/**
+ * Here are all test cases that are needed for RFC6902 compliance.
+ *
+ * Test cases that do not have anything to do with RFC6902 compliance are found elsewhere.
+ */
+class JsonPatchRFC6902Spec extends UnitSpec {
   val json = Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1}""")
 
   "JsPatch" should {
@@ -270,15 +273,5 @@ class JsonPatchSpec extends WordSpec with Matchers {
       pending
     }
     "tests json literals true, false, null for equality correctly" in pending
-  }
-
-  "A Seq[JsPatchOp]" should {
-    "be convertible to JSON" in {
-      val jsPatch: JsValue =
-        Json.parse("""[{"op":"add", "path":"/b/d", "value":false},{"op":"test", "path":"/a", "value":1}]""")
-      val patch = JsPatch(jsPatch)
-      patch shouldBe 'right
-      Json.toJson(patch.right.get.patchSet) shouldBe jsPatch
-    }
   }
 }
