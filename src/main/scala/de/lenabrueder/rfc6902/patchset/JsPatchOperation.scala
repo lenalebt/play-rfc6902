@@ -3,7 +3,7 @@ package de.lenabrueder.rfc6902.patchset
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-import scala.util.{ Failure, Right }
+import scala.util.{ Success, Try, Failure, Right }
 
 /**
  * Here, all operation mapping takes place. This is where access rights need to be checked in case they are relevant.
@@ -35,6 +35,7 @@ object JsPatchOperation {
         case "replace" => Right(jsOperation.validate[JsPatchReplaceOp])
         case "move"    => Right(jsOperation.validate[JsPatchMoveOp])
         case "copy"    => Right(jsOperation.validate[JsPatchCopyOp])
+        case "overlay" => Right(jsOperation.validate[JsPatchOverlayOp])
         case _         => Left(IllegalOperation(jsOperation))
       }) match {
         case Right(JsSuccess(op, _)) => Right(op)
@@ -54,6 +55,7 @@ object JsPatchOperation {
       case o @ JsPatchReplaceOp(path, value)   => Json.toJson(o)(JsPatchReplaceOp.jsPatchReplaceOpWrites)
       case o @ JsPatchMoveOp(pathFrom, pathTo) => Json.toJson(o)(JsPatchMoveOp.jsPatchMoveOpWrites)
       case o @ JsPatchCopyOp(pathFrom, pathTo) => Json.toJson(o)(JsPatchCopyOp.jsPatchCopyOpWrites)
+      case o @ JsPatchOverlayOp(path, value)   => Json.toJson(o)(JsPatchOverlayOp.jsPatchOverlayOpWrites)
     }
   }
 }
@@ -271,6 +273,37 @@ object JsPatchCopyOp {
       "op" -> "copy",
       "from" -> o.pathFrom,
       "path" -> o.pathTo
+    )
+  }
+}
+
+/**
+ * operation "overlay"
+ * @param path
+ */
+case class JsPatchOverlayOp(path: String,
+                            value: JsValue)
+    extends JsPatchOperation {
+  def apply(jsValue: JsValue): Either[PatchApplicationError, JsValue] = {
+    val jsPath: JsPath = toJsPath(path)
+    Try(jsValue.as[JsObject].deepMerge(jsPath.write[JsValue].writes(value).as[JsObject])) match {
+      case Success(value) => Right(value)
+      case Failure(ex)    => Left(OverlayFailed(jsPath, value))
+    }
+  }
+}
+
+object JsPatchOverlayOp {
+  implicit val jsPatchOverlayOpReads: Reads[JsPatchOverlayOp] = (
+    (JsPath \ "path").read[String] and
+    (JsPath \ "value").read[JsValue]
+  )(JsPatchOverlayOp.apply _)
+
+  implicit val jsPatchOverlayOpWrites: Writes[JsPatchOverlayOp] = new Writes[JsPatchOverlayOp] {
+    override def writes(o: JsPatchOverlayOp): JsValue = Json.obj(
+      "op" -> "overlay",
+      "path" -> o.path,
+      "value" -> o.value
     )
   }
 }
