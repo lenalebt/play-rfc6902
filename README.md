@@ -4,7 +4,7 @@ in [Play](https://www.playframework.com/) applications without the need for addi
 
 To use it in your project, simply include it in your `build.sbt`:
 
-    libraryDependencies += "de.lenabrueder" %% "play-rfc6902" % "0.1"
+    libraryDependencies += "de.lenabrueder" %% "play-rfc6902" % "0.5.play24"
 
 # Examples
 

@@ -6,7 +6,7 @@ name := """play-rfc6902"""
 
 organization := "de.lenabrueder"
 
-version := "0.5"
+version := "0.5.play24"
 
 licenses += ("LGPL", url("https://opensource.org/licenses/LGPL-3.0"))
 
@@ -43,7 +43,7 @@ scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.11.8")
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-json" % "2.5.3",
+  "com.typesafe.play" %% "play-json" % "2.4.6",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 
