@@ -165,6 +165,11 @@ class JsonPatchRFC6902Spec extends UnitSpec {
       patch.right.get(json) should equal(Left((json, Seq(ReplaceFailedPathDidNotExist(JsPath \ "d")))))
     }
     """behave exactly as "first remove, then add" """ in pending
+    "successfully replace an object at the path" in {
+      val patch = JsPatch(Json.parse("""[{"op":"replace", "path":"/b", "value":{"e": "f"}}]"""))
+      patch shouldBe 'right
+      patch.right.get(json) should equal(Right(Json.parse("""{"a":"b","b":{"e": "f"},"c":1}""")))
+    }
   }
   "JsPatch.move" should {
     "not be successful if the source location does not exist" in {
