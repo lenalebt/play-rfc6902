@@ -184,9 +184,13 @@ case class JsPatchReplaceOp(
     val jsPath: JsPath = toJsPath(path)
     jsValue.transform(jsPath.json.pick) match {
       case JsSuccess(pickedValue, _) =>
-        jsValue.transform(jsPath.json.update(JsPath.read[JsValue].map { o => value })) match {
-          case JsSuccess(transformedJs, _) => Right(jsValue.as[JsObject].deepMerge(transformedJs))
-          case _: JsError                  => Left(ReplaceFailed(value, jsPath))
+        jsValue.transform(jsPath.json.prune) match {
+          case JsSuccess(prunedJson, _) =>
+            prunedJson.transform(__.json.update(jsPath.json.put(value))) match {
+              case JsSuccess(resultJson, _) => Right(resultJson)
+              case _: JsError               => Left(ReplaceFailed(value, jsPath))
+            }
+          case _: JsError => Left(ReplaceFailed(value, jsPath))
         }
       case _: JsError => Left(ReplaceFailedPathDidNotExist(jsPath))
     }
