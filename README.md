@@ -6,6 +6,10 @@ To use it in your project, simply include it in your `build.sbt`:
 
     libraryDependencies += "de.lenabrueder" %% "play-rfc6902" % "0.6"
 
+# DISCLAIMER
+
+Please use https://github.com/gnieh/diffson instead of this library. At the time I wrote this, Diffson did not have support for the play framework JSON lib. It now has it (and support for circe as well), so no need to use my lib anymore.
+
 # Examples
 
     val json = Json.parse("""{"a":"b", "b":{"c":"d"}, "c":1}""")
